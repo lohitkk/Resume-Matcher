@@ -2,46 +2,65 @@ pipeline {
     agent any
 
     environment {
-        NODE_HOME = "C:\\Program Files\\nodejs"
-        PATH = "${env.NODE_HOME};${env.PATH}"
+        DOCKER_IMAGE = 'resume-matcher:latest'
+        TERRAFORM_DIR = 'terraform'  // folder containing terraform .tf files
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout Repository') {
             steps {
-                echo "Cloning repository..."
                 git branch: 'main', url: 'https://github.com/lohitkk/Resume-Matcher.git'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build Docker Image') {
             steps {
-                echo "Installing npm packages..."
-                bat 'npm install'
+                echo "Building Docker image..."
+                bat "docker build -t ${DOCKER_IMAGE} ."
             }
         }
 
-        stage('Build Project') {
+        stage('Run Docker Container') {
             steps {
-                echo "Building Next.js app..."
-                bat 'npm run build'
+                echo "Running Docker container..."
+                // Stop old container if exists
+                bat 'docker rm -f resume-matcher-container || echo "No existing container found."'
+                // Run new one
+                bat 'docker run -d -p 3000:3000 --name resume-matcher-container resume-matcher:latest'
             }
         }
 
-        stage('Run Project') {
+        stage('Terraform Init') {
             steps {
-                echo "Starting server..."
-                bat 'npm start'
+                dir("${TERRAFORM_DIR}") {
+                    bat 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir("${TERRAFORM_DIR}") {
+                    bat 'terraform plan -out=tfplan'
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir("${TERRAFORM_DIR}") {
+                    bat 'terraform apply -auto-approve tfplan'
+                }
             }
         }
     }
 
     post {
         success {
-            echo "✅ Build completed successfully!"
+            echo "✅ CI/CD pipeline completed successfully!"
         }
         failure {
-            echo "❌ Build failed! Check console output for errors."
+            echo "❌ Build failed. Check the logs for details."
         }
     }
 }
