@@ -32,14 +32,6 @@ pipeline {
             }
         }
 
-        stage('Terraform Plan') {
-            steps {
-                echo "🧠 Checking Terraform plan..."
-                dir('terraform') {
-                    bat 'terraform plan'
-                }
-            }
-        }
 
         // Terraform Apply stage removed or disabled
     }
