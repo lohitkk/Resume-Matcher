@@ -22,15 +22,19 @@ pipeline {
             }
         }
 
-        stage('Run Docker Container') {
-            steps {
-                echo "🚀 Running Docker container..."
-                // Stop and remove any old container on the same name or port
-                bat 'for /f "tokens=5" %a in (\'netstat -ano ^| findstr :3000\') do taskkill /PID %a /F || echo No process found on port 3000'
-                bat "docker rm -f ${CONTAINER_NAME} || echo No existing container found."
-                bat "docker run -d -p 3000:3000 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
-            }
-        }
+      stage('Run Docker Container') {
+    steps {
+        echo "🚀 Running Docker container..."
+        // Stop container if it’s already running
+        bat '''
+        for /f "tokens=5" %%a in ('netstat -ano ^| find ":3000"') do taskkill /PID %%a /F
+        echo No process found on port 3000 (if none were killed)
+        docker rm -f resume-matcher-container || echo "No old container to remove"
+        docker run -d -p 3000:3000 --name resume-matcher-container resume-matcher:latest
+        '''
+    }
+}
+
 
         stage('Terraform Init') {
             steps {
