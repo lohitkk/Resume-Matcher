@@ -1,9 +1,12 @@
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(name: 'RUN_TERRAFORM_APPLY', defaultValue: false, description: 'Run Terraform Apply stage?')
+    }
+
     environment {
         DOCKER_HOST = 'npipe:////./pipe/docker_engine'
-        DOCKER_CLI_EXPERIMENTAL = 'enabled'
     }
 
     stages {
@@ -27,30 +30,40 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 echo "🧩 Initializing Terraform..."
-                bat '''
-                    cd terraform
-                    terraform init
-                '''
+                dir('terraform') {
+                    bat 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                echo "🧠 Generating Terraform plan..."
+                dir('terraform') {
+                    bat 'terraform plan'
+                }
             }
         }
 
         stage('Terraform Apply') {
+            when {
+                expression { return params.RUN_TERRAFORM_APPLY }
+            }
             steps {
-                echo "☁ Deploying via Terraform..."
-                bat '''
-                    cd terraform
-                    terraform apply -auto-approve
-                '''
+                echo "☁ Deploying with Terraform..."
+                dir('terraform') {
+                    bat 'terraform apply -auto-approve'
+                }
             }
         }
     }
 
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            echo '✅ Pipeline completed successfully.'
         }
         failure {
-            echo '❌ Build failed! Check Docker connection or Terraform.'
+            echo '❌ Build failed.'
         }
     }
 }
