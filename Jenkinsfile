@@ -5,7 +5,6 @@ pipeline {
         DOCKER_IMAGE = 'resume-matcher:latest'
         CONTAINER_NAME = 'resume-matcher-container'
         TERRAFORM_DIR = 'terraform'
-        AWS_CREDS = credentials('aws-creds')  // 👈 Jenkins stored AWS credentials
     }
 
     stages {
@@ -19,7 +18,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "🐳 Building Docker image..."
-                bat "docker build -t ${DOCKER_IMAGE} ."
+                bat "docker build -t %DOCKER_IMAGE% ."
             }
         }
 
@@ -38,7 +37,7 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 echo "🧩 Initializing Terraform..."
-                dir("${TERRAFORM_DIR}") {
+                dir("%TERRAFORM_DIR%") {
                     bat 'terraform init'
                 }
             }
@@ -47,11 +46,12 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 echo "🧮 Running Terraform plan..."
-                dir("${TERRAFORM_DIR}") {
+                dir("%TERRAFORM_DIR%") {
                     bat '''
                     terraform plan ^
-                      -var="aws_access_key=%AWS_CREDS_USR%" ^
-                      -var="aws_secret_key=%AWS_CREDS_PSW%" ^
+                      -var="aws_access_key=%AWS_ACCESS_KEY%" ^
+                      -var="aws_secret_key=%AWS_SECRET_KEY%" ^
+                      -var="instance_type=t3.micro" ^
                       -out=tfplan
                     '''
                 }
@@ -61,11 +61,12 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 echo "🌍 Applying Terraform configuration..."
-                dir("${TERRAFORM_DIR}") {
+                dir("%TERRAFORM_DIR%") {
                     bat '''
                     terraform apply ^
-                      -var="aws_access_key=%AWS_CREDS_USR%" ^
-                      -var="aws_secret_key=%AWS_CREDS_PSW%" ^
+                      -var="aws_access_key=%AWS_ACCESS_KEY%" ^
+                      -var="aws_secret_key=%AWS_SECRET_KEY%" ^
+                      -var="instance_type=t3.micro" ^
                       -auto-approve tfplan
                     '''
                 }
