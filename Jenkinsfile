@@ -33,45 +33,44 @@ pipeline {
                 '''
             }
         }
-
-        stage('Terraform Init') {
-            steps {
-                echo "🧩 Initializing Terraform..."
-                dir("%TERRAFORM_DIR%") {
-                    bat 'terraform init'
-                }
-            }
+stage('Terraform Init') {
+    steps {
+        echo "🧩 Initializing Terraform..."
+        dir("${TERRAFORM_DIR}") {
+            bat 'terraform init'
         }
+    }
+}
 
-        stage('Terraform Plan') {
-            steps {
-                echo "🧮 Running Terraform plan..."
-                dir("%TERRAFORM_DIR%") {
-                    bat '''
-                    terraform plan ^
-                      -var="aws_access_key=%AWS_ACCESS_KEY%" ^
-                      -var="aws_secret_key=%AWS_SECRET_KEY%" ^
-                      -var="instance_type=t3.micro" ^
-                      -out=tfplan
-                    '''
-                }
-            }
+stage('Terraform Plan') {
+    steps {
+        echo "📋 Running Terraform plan..."
+        dir("${TERRAFORM_DIR}") {
+            bat '''
+                terraform plan ^
+                  -var="aws_access_key=%AWS_ACCESS_KEY%" ^
+                  -var="aws_secret_key=%AWS_SECRET_KEY%" ^
+                  -var="instance_type=t3.micro" ^
+                  -out=tfplan
+            '''
         }
+    }
+}
 
-        stage('Terraform Apply') {
-            steps {
-                echo "🌍 Applying Terraform configuration..."
-                dir("%TERRAFORM_DIR%") {
-                    bat '''
-                    terraform apply ^
-                      -var="aws_access_key=%AWS_ACCESS_KEY%" ^
-                      -var="aws_secret_key=%AWS_SECRET_KEY%" ^
-                      -var="instance_type=t3.micro" ^
-                      -auto-approve tfplan
-                    '''
-                }
-            }
+stage('Terraform Apply') {
+    steps {
+        echo "🌍 Applying Terraform configuration..."
+        dir("${TERRAFORM_DIR}") {
+            bat '''
+                terraform apply ^
+                  -var="aws_access_key=%AWS_ACCESS_KEY%" ^
+                  -var="aws_secret_key=%AWS_SECRET_KEY%" ^
+                  -auto-approve tfplan
+            '''
         }
+    }
+}
+
     }
 
     post {
