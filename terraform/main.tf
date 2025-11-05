@@ -24,4 +24,5 @@ resource "aws_instance" "resume_matcher" {
 
 output "instance_public_ip" {
   value       = aws_instance.resume_matcher.public_ip
-  description = "Public IP of Resume Matcher EC2 instance
+  description = "Public IP of Resume Matcher EC2 instance"
+}
