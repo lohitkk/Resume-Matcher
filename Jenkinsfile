@@ -5,6 +5,7 @@ pipeline {
         DOCKER_IMAGE = 'resume-matcher:latest'
         CONTAINER_NAME = 'resume-matcher-container'
         TERRAFORM_DIR = 'terraform'
+        AWS_CREDS = credentials('aws-creds')  // 👈 Jenkins stored AWS credentials
     }
 
     stages {
@@ -22,19 +23,17 @@ pipeline {
             }
         }
 
-      stage('Run Docker Container') {
-    steps {
-        echo "🚀 Running Docker container..."
-        // Stop container if it’s already running
-        bat '''
-        for /f "tokens=5" %%a in ('netstat -ano ^| find ":3000"') do taskkill /PID %%a /F
-        echo No process found on port 3000 (if none were killed)
-        docker rm -f resume-matcher-container || echo "No old container to remove"
-        docker run -d -p 3000:3000 --name resume-matcher-container resume-matcher:latest
-        '''
-    }
-}
-
+        stage('Run Docker Container') {
+            steps {
+                echo "🚀 Running Docker container..."
+                bat '''
+                for /f "tokens=5" %%a in ('netstat -ano ^| find ":3000"') do taskkill /PID %%a /F
+                echo No process found on port 3000 (if none were killed)
+                docker rm -f resume-matcher-container || echo "No old container to remove"
+                docker run -d -p 3000:3000 --name resume-matcher-container resume-matcher:latest
+                '''
+            }
+        }
 
         stage('Terraform Init') {
             steps {
@@ -49,7 +48,12 @@ pipeline {
             steps {
                 echo "🧮 Running Terraform plan..."
                 dir("${TERRAFORM_DIR}") {
-                    bat 'terraform plan -out=tfplan'
+                    bat '''
+                    terraform plan ^
+                      -var="aws_access_key=%AWS_CREDS_USR%" ^
+                      -var="aws_secret_key=%AWS_CREDS_PSW%" ^
+                      -out=tfplan
+                    '''
                 }
             }
         }
@@ -58,7 +62,12 @@ pipeline {
             steps {
                 echo "🌍 Applying Terraform configuration..."
                 dir("${TERRAFORM_DIR}") {
-                    bat 'terraform apply -auto-approve tfplan'
+                    bat '''
+                    terraform apply ^
+                      -var="aws_access_key=%AWS_CREDS_USR%" ^
+                      -var="aws_secret_key=%AWS_CREDS_PSW%" ^
+                      -auto-approve tfplan
+                    '''
                 }
             }
         }
