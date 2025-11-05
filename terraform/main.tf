@@ -5,7 +5,7 @@ provider "aws" {
 }
 
 resource "aws_instance" "resume_matcher" {
-  ami           = "ami-0c2b8ca1dad447f8a"
+  ami           = "ami-0dee22c13ea7a9a67"
   instance_type = var.instance_type
 
   tags = {
