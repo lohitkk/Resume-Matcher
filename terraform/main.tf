@@ -1,7 +1,7 @@
 provider "aws" {
-  region     = "ap-south-1"
-  access_key = "YOUR_AWS_ACCESS_KEY"
-  secret_key = "YOUR_AWS_SECRET_KEY"
+  region     = "us-east-1"   # You can change this if you’re using another region
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
 }
 
 resource "aws_instance" "resume_matcher" {
